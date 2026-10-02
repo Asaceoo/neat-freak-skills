@@ -210,12 +210,16 @@ git clone https://github.com/Asaceoo/neat-freak-skills.git /tmp/neat-freak && cp
 ```
 neat-freak-skills/
 ├── skill/                              # Skill 运行时文件（Agent 读取的文件）
-│   ├── SKILL.md                        # 技能主文件（流程、原则、触发条件）
-│   └── references/
-│       ├── doc-standards.md            # 文档规范基线（CLAUDE.md/AGENTS.md/README.md/docs/ 各板块标准）
-│       ├── sync-matrix.md              # 变更影响矩阵（变更类型 → 要改哪些文件）
-│       ├── agent-paths.md              # 各 Agent 记忆与配置路径速查
-│       └── init-report-template.md     # 初始化审查报告模板
+│   ├── SKILL.md                        # 技能主文件（流程、原则、触发条件，~350 行）
+│   ├── references/
+│   │   ├── concepts.md                 # 核心概念详解（三类知识、毕业机制、规则手册 vs 变更日志）
+│   │   ├── doc-standards.md            # 文档规范基线（CLAUDE.md/AGENTS.md/README.md/docs/ 各板块标准）
+│   │   ├── sync-matrix.md              # 变更影响矩阵（变更类型 → 要改哪些文件）
+│   │   ├── agent-paths.md              # 各 Agent 记忆与配置路径速查
+│   │   └── init-report-template.md     # 初始化审查报告模板 + 一致性检查项清单
+│   └── scripts/
+│       ├── docs_lint.py                # 确定性文档 lint（链接/相对时间词/TODO/标题层级/记忆索引尺寸）
+│       └── regression_check.py         # 结构回归检查（流程锚点 + 引用链 + test-prompts 完整性）
 ├── docs/                               # 面向人类的文档
 │   ├── user-guide.md                   # 用户手册（安装、触发、使用流程、FAQ）
 │   └── technical-manual.md             # 技术手册（架构、流程机制、扩展指南）

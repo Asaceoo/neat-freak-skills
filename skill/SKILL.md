@@ -16,65 +16,18 @@ description: >
 
 你是一个**知识库编辑**，不是记录员。记录员只会往后追加，编辑会审查全局、合并重复、修正过期、删除废弃。你的工作是让整个项目的知识体系始终保持**干净、准确、对新人友好**的状态——像有洁癖一样。
 
-## 为什么这件事重要
+## 核心概念速览
 
-在 AI 协作开发中，代码可以随时重写，但**文档和记忆是跨会话、跨 Agent 的唯一桥梁**。如果记忆里有过期信息，下一个 Agent（无论它是 Claude、Codex 还是别的）会基于错误前提做决策。如果 docs/ 混乱或缺失，接手者（尤其是下游项目的同事）会浪费大量时间搞清楚这套系统怎么用。
+完整的概念解释（三类知识三种受众、CLAUDE.md vs README、毕业机制原理、规则手册 vs 变更日志）见 **[references/concepts.md](references/concepts.md)**——首次执行前必读，熟练后此速览足够。
 
-这个 Skill 的价值就在于：**让知识体系的每一层都跟得上代码的变化。**
-
-## 关键概念：三类知识，三种受众
-
-**必须先理解这件事，否则你会只改 CLAUDE.md / AGENTS.md 就结束，把下游同事和其他 agent 晾在那儿。**
-
-| 位置 | 受众 | 职责 | 不同步的代价 |
-|------|------|------|--------------|
-| **Agent 记忆系统**（若 agent 支持） | Agent 自己跨会话复用 | 个人偏好、非显而易见的项目事实、跨项目 reference | 下次会话 Agent 忘记历史决策 |
-| 项目根 `CLAUDE.md` / `AGENTS.md` | 当前项目里的 AI（下次会话自己） | 项目约定、结构、红线、环境变量、路由清单 | 下次 AI 在这个项目里走弯路 |
-| 项目 `docs/` + `README.md` | **其他人**（人类同事、下游开发者、未来接手的 AI） | 接入指南、架构图、运维手册、交接说明、API 参考 | **其他人或系统无法正确接入或运维** |
-
-### CLAUDE.md / AGENTS.md vs README.md：受众不同，职责不同
-
-**CLAUDE.md / AGENTS.md 告诉 AI "你应该怎么做事"**——就像给一位聪明但完全不了解项目背景的 AI 新同事写的"入职手册 + 行为准则"，用具体、可执行的语言，把"项目是什么、怎么跑、怎么写代码、绝对不能做什么"一次性说清楚。
-
-**README.md 告诉人类 "这个项目能做什么"**——优秀的 README 是对读者时间的尊重，用最短的时间让人说"我懂了，这有用"，并给出清晰的下一步。始终站在新手的视角，让它能复制、能运行、能看懂。
-
-两者**受众不同、内容不重叠**。CLAUDE.md 里写"Prisma 查询只写在 `modules/**/data/`" ≠ README 里写"快速开始：npm install && npm run dev"——前者是告诉 AI 行为约束，后者是告诉人怎么用。**两份都要有，不能互相替代。**
-
-> **CLAUDE.md 和 AGENTS.md 功能等价，只维护一个即可。** 如果项目同时被多个 agent 平台使用，一份主文件 + 另一份用一行 `See CLAUDE.md` 跳转。同时维护两份只会导致信息不一致。
-
-> **Agent 记忆系统的具体位置因平台而异**（Claude Code 在 `~/.claude/projects/<...>/memory/`，Codex 用 `AGENTS.md`，OpenCode 用 `.opencode/`，OpenClaw 用 `~/.openclaw/`）。完整路径速查见 [references/agent-paths.md](references/agent-paths.md)。如果当前 agent 没有独立的记忆系统，直接跳过这一层，把功夫全花在 docs 和项目根 markdown 上。
-
-### 记忆只增不改、docs 就地编辑——要靠「毕业」机制把知识往上泵（膨胀头号根因）
-
-必须理解这条不对称，否则记忆永远在膨胀：**docs 靠就地编辑收敛**（系统改 10 次，还是那一份 `ARCHITECTURE.md`），**而 agent 记忆天生只追加**（每条教训生一个新文件，旧的不删）。没有反向阀门，memory 会一路堆到比 docs 还大，真正稳定的知识被困在几十个松散文件里——既进不了 prompt（索引 25KB 截断），也没沉淀成给别人看的文档。高速开发的项目尤其明显：每天 2-3 条教训 × 数周 = 上百个记忆文件。
-
-**反向阀门 = 毕业（promote）。** 一条记忆满足下面任一条，就把它「毕业」：内容并进对应的 `docs/` 或 CLAUDE.md / AGENTS.md，然后**把原记忆文件删掉或缩成一行指针**：
-
-- **同一主题的教训反复出现到第 3 次** → 它已是稳定知识而非「最近踩的坑」，归 docs。
-- **它讲的是「系统怎么工作」而非「我们踩过什么坑 / 做过什么决策」** → 本就是 docs 的职责，memory 顶多留指针。
-- **它是「X 上线 / 落地 / 就位」的事件记录** → 现役事实进 docs，过程进 git log / `docs/CHANGES.md`，memory 不留常驻文件。
-
-判据一句话：**「下一个接手的人（不只是我自己）需要知道这件事吗？」需要 → 它属于 docs，不是 memory。**
-
-> 记忆文件若用类型前缀（如 `feedback_`=教训 / `project_`=决策事件 / `reference_`=速查），生命周期不同：`reference_` 通常合法长期常驻；`feedback_` 稳定后毕业；`project_` 多数是事件记录，**是优先毕业 / 删除的对象**——决策结论进 docs，过程进 changelog。
-
-### CLAUDE.md / AGENTS.md 是规则手册，不是变更日志（重要）
-
-最常见的 skill 翻车模式：每次开发完都在 CLAUDE.md / AGENTS.md 顶部加一段 blockquote 历史叙事——"2026-05-08 X 功能上线，详见 docs/Y.md"。一次很爽，半年后顶部就是 200 行 blockquote 把真正的规则推到看不见。**这种叙事不属于 CLAUDE.md / AGENTS.md**，它的归宿是 git log / `/changelog` 页 / `docs/CHANGES.md`。
-
-判断一条信息该不该进 CLAUDE.md / AGENTS.md，问一句：**下次 AI 写代码时如果没看到这条，会不会犯错？**
-
-| 例子 | 进 CLAUDE.md / AGENTS.md？ | 理由 |
-|---|---|---|
-| "Prisma 查询只写在 `modules/**/data/`" | ✅ | 违反就是边界破坏，AI 必须看到 |
-| "rsync 单文件部署必须用完整 target 路径" | ✅ | 踩坑警示，会再次踩 |
-| "禁止裸跑 systemctl stop aihot-worker" | ✅ | 红线，事故级 |
-| "2026-05-08 timelineAt 上线，详见 docs/ARCHITECTURE.md §5.4" | ❌ | 详细机制在 docs；AI 改到这块自然会读 docs；「深入文档」指针表已做这件事 |
-| "2026-04-30 起公网开放，匿名可访 /、/all" | ❌ | 既是历史也是事实，但事实归 docs/ARCHITECTURE.md §8 + 项目概览一句话足矣 |
-| "5/8 修了 X bug 的复盘细节" | ❌ | 单次事故记忆，归 memory 或干脆删 |
-
-✅ 该进 CLAUDE.md / AGENTS.md 的内容：硬边界规则、禁止事项、命令速查、权限模型、协作流程、深入文档指针表、踩坑警示。
-❌ 不该进的：历史叙事（"X 时刻起 Y 上线"）、详细机制说明、单次事故复盘、bug fix 流水账、"详见 docs/Z.md" 的指针句子（这个角色已经被「深入文档」指针表占掉了）。
+| 概念 | 一句话规则 |
+|------|-----------|
+| **三层知识** | agent 记忆（自己用）/ CLAUDE.md·AGENTS.md（AI 规则）/ README+docs（人类接入）——受众不同，互不替代 |
+| **单一主文件** | CLAUDE.md 和 AGENTS.md 功能等价，只维护一个；另一个留一行跳转 |
+| **毕业机制** | 记忆只增不改会膨胀：教训重复到第 3 次 / "系统怎么工作"的知识 / 事件记录 → 并进 docs，原记忆缩成一行 `superseded` 失效指针（默认不物理删除，便于审计）或删 |
+| **规则手册非日志** | CLAUDE.md / AGENTS.md 只放"下次 AI 不看到就会犯错"的规则；历史叙事归 git log / CHANGELOG |
+| **尺寸红线** | CLAUDE.md ~300 行；MEMORY.md ≤200 行且 ≤25KB（超限部分会话开始时静默不加载 = 没记）；单条 memory ~100 行；单个 docs 文件 ~1500 行 |
+| **体量倒挂** | 健康态是 docs 厚、memory 薄；倒挂 = 该毕业进 docs 的知识赖在 memory 里 |
 
 ## 文档规范基线
 
@@ -96,11 +49,8 @@ description: >
 - 用户明确要求初始化（按语义匹配，不按精确字符串匹配。"初始化项目" / "初始化下项目" / "初始化一下" / "项目初始化吧" / "init project" / "首次梳理" / "从头整理" / "bootstrap docs" 等均算——只要意图是"从零建立项目知识体系"即可）→ **走初始化**
 - 用户明确要求同步（"同步一下" / "sync up" / "整理一下" / "tidy up" / "/sync" / "/neat" / "搞一下文档" / "搞一下" 等）→ **走常规同步**，即使项目缺少文档也不自动切到初始化——用户要的是"对齐现状"，不是"从零建"
 
-**优先级 2 — 自动检测条件（仅在用户未显式表态时生效）**：
-满足任一即走初始化：
-- `CLAUDE.md` 和 `AGENTS.md` 均不存在或为空
-- `docs/` 不存在或为空
-- `README.md` 不存在
+**优先级 2 — 自动检测条件（仅在用户未显式表态时生效）**：满足任一即走初始化：
+- `CLAUDE.md` 和 `AGENTS.md` 均不存在或为空；`docs/` 不存在或为空；`README.md` 不存在
 
 **优先级 3 — 辅助信号（不独立触发，只用于增强判断）**：
 - 项目根目录无 neat-freak 初始化标记（`<!-- neat-freak: initialized at ... -->`）——**单独不触发初始化**，只在优先级 2 的条件部分满足时作为"倾向初始化"的辅助判据。一个文档完善但没用过 neat-freak 的项目不应因此被判定为需要初始化。
@@ -123,7 +73,7 @@ description: >
    - **开发文件**（如有）：`src/`、`tests/` 等 — 按普通项目规范处理，放在根目录
    - **关键原则**：Skill 类项目不强制建 `docs/` 目录。`SKILL.md` 是核心文档，`references/` 是详细文档，已构成完整文档体系。强行建 docs/ 反而让结构复杂化。**目录结构检查**：Skill 运行时文件应在 `skill/` 子目录下，开发与治理文件应在根目录下——发现运行时文件散落在根目录时在审查报告中标注为 🟡 中，建议迁移到 `skill/` 子目录。
 2. **技术栈** — 语言版本、框架及版本、数据库、构建工具、部署方式（从 package.json / go.mod / pyproject.toml / Cargo.toml / Dockerfile 等提取）
-3. **目录结构** — 每个顶层目录及关键子目录的职责推断。**Skill 类项目**：按"项目类型"中定义的分层规则检查（运行时文件在 `skill/` 子目录、开发与治理文件在根目录），未分层的项目（运行时文件散落在根目录）在审查报告中标注为 🟡 中，建议迁移到 `skill/` 子目录。两类分开评估，不混为一谈
+3. **目录结构** — 每个顶层目录及关键子目录的职责推断。**Skill 类项目**：按"项目类型"中定义的分层规则检查，未分层的项目在审查报告中标注为 🟡 中，建议迁移到 `skill/` 子目录。两类分开评估，不混为一谈
 4. **可用命令** — install / dev / test / build / deploy / lint 等所有可用命令（从 package.json scripts / Makefile / CI 配置等提取）
 5. **环境变量** — 代码中实际使用的所有环境变量（grep process.env / os.Getenv / dotenv 等）
 6. **API / 路由** — 所有 API 端点、HTTP 方法、路径（从路由注册代码提取）
@@ -139,7 +89,7 @@ description: >
 
 **提取原则**：只记录代码中**实际存在**的事实，不推断意图。每条事实要具体到可以与文档逐条比对——"代码中有 12 个 API 端点"比"代码有 API"有用；"环境变量 `DATABASE_URL` 在 `src/config.ts:5` 被引用"比"有数据库配置"有用。
 
-**代码逻辑与设计文档一致性提取**：除了上述静态事实，还需关注代码**实际行为**与 `docs/architecture.md`（如有）描述之间的偏差——数据流方向是否与架构图一致、模块间的调用关系是否符合设计文档描述的分层、状态机流转是否与设计文档中的状态图匹配。这类偏差不在提取阶段做判断，但在 Step 1-init 审查时作为专项检查列出。
+**代码逻辑与设计文档一致性提取**：除静态事实外，还需关注代码**实际行为**与 `docs/architecture.md`（如有）描述之间的偏差——数据流方向、模块调用关系、状态机流转是否与设计文档一致。这类偏差不在提取阶段做判断，但在 Step 1-init 审查时作为专项检查列出。
 
 #### Step 1-init：代码与文档一致性审查（只审查不动手）
 
@@ -147,31 +97,11 @@ description: >
 
 审查分两个维度，**一致性优先**：
 
-**维度一：一致性检查（核心）** — 文档中的描述与代码事实是否一致
+**维度一：一致性检查（核心）** — 文档中的描述与代码事实是否一致。对照 **15 项检查清单**（命令准确性、环境变量完整性与准确性、API 端点、技术栈、目录结构、配置准确性、路径有效性、依赖版本、配置文件一致性、CI/CD 对齐、项目元数据、CHANGELOG 与代码、代码逻辑与设计文档、文档内链接有效性）逐条比对。**完整检查项、比对方法与不一致示例表见 [references/init-report-template.md](references/init-report-template.md) 的「一致性检查项清单」章节。**
 
-| 检查项 | 比对方法 | 不一致示例 |
-|--------|----------|------------|
-| 命令准确性 | 文档中的命令 vs 代码中实际可用的命令 | 文档写 `npm start`，代码中只有 `npm run dev` |
-| 环境变量完整性 | 文档中列出的环境变量 vs 代码中实际使用的 | 文档列出 3 个，代码中实际用了 8 个 |
-| 环境变量准确性 | 文档中的变量名/默认值 vs 代码中的 | 文档写 `DB_HOST`，代码中是 `DATABASE_HOST` |
-| API 端点一致性 | 文档中的 API 列表 vs 代码中注册的路由 | 文档列出 5 个端点，代码中有 12 个 |
-| 技术栈准确性 | 文档中的技术栈 vs 代码依赖文件 | 文档写 Express 3，package.json 是 Express 4 |
-| 目录结构一致性 | 文档中的目录说明 vs 实际目录 | 文档说"源码在 src/"，实际在 lib/ |
-| 配置准确性 | 文档中的配置项 vs 代码中的配置定义 | 文档说端口 3000，代码默认 8080 |
-| 路径有效性 | 文档中引用的文件路径 vs 实际文件 | 文档指向 `docs/api.md`，文件不存在 |
-| 依赖版本 | 文档中的版本要求 vs 实际依赖版本 | 文档要求 Node 16，package.json 写 Node 20 |
-| 配置文件一致性 | 配置文件实际内容 vs 文档描述 | `.env.example` 有 15 个变量，文档只提了 8 个；文档说"Redis 用于缓存"但 `docker-compose.yml` 没有 Redis 服务 |
-| CI/CD 与文档对齐 | CI/CD 配置中的命令/目标 vs 文档描述 | 文档写 `npm test`，CI 中跑的是 `npm run test:ci`；文档说"main 自动部署"但 CI 配置部署目标是 staging |
-| 项目元数据一致性 | `package.json` / `pyproject.toml` 元数据 vs README 描述 | README 说"支持 Node 18+"但 `engines` 字段写 `>=16`；`description` 与 README 简介不一致 |
-| CHANGELOG 与代码一致性 | CHANGELOG 中的功能声明 vs 代码实际实现 | CHANGELOG 声称"新增 X 功能"但代码中没有实现；声称"修复了 Y bug"但修复代码未合并 |
-| 代码逻辑与设计文档一致性 | 代码实际行为 vs `docs/architecture.md` 描述 | 数据流方向与架构图不符；模块调用关系违反设计文档描述的分层原则；状态机流转与设计文档状态图不匹配 |
-| 文档内链接有效性 | 文档中所有相对链接 / 锚点 vs 实际文件路径 | `[详见架构](./architecture.md)` 目标文件不存在；文件重命名后旧链接未更新；锚点 `#section` 不存在 |
+**维度二：完整性检查（辅助）** — 文档是否覆盖了代码事实（用规范基线的板块清单做框架）。对 CLAUDE.md / AGENTS.md、README.md、docs/ 中的每个板块，标注状态（✅ 合格 / ⚠️ 不一致 / ⚠️ 不完整 / ❌ 缺失 / — 不适用）。
 
-**维度二：完整性检查（辅助）** — 文档是否覆盖了代码事实（用规范基线的板块清单做框架）
-
-对 CLAUDE.md / AGENTS.md、README.md、docs/ 中的每个板块，标注状态（✅ 合格 / ⚠️ 不一致 / ⚠️ 不完整 / ❌ 缺失 / — 不适用，详见模板文件）。
-
-**审查报告格式**：见 **[references/init-report-template.md](references/init-report-template.md)**——包含完整的项目概况、一致性问题表、CLAUDE.md / AGENTS.md / README.md / docs/ 各板块审查、散落 .md 文件审查的示例。
+**审查报告格式**：见 **[references/init-report-template.md](references/init-report-template.md)**——包含完整的项目概况、一致性问题表、各板块审查、散落 .md 文件审查的示例。
 
 #### Step 2-init：用户确认
 
@@ -179,38 +109,10 @@ description: >
 
 **初始化必须等用户确认后才动手——这是与常规同步的核心区别。**
 
-基于审查报告，输出**操作清单**供用户逐项确认。操作清单按优先级排列：**先修不一致（🔴 高），再补缺失，最后优化**。
+基于审查报告，输出**操作清单**供用户逐项确认。操作清单按优先级排列：**先修不一致（🔴 高），再补缺失，最后优化**，分组为：🔴 修复不一致（优先）→ 🟡 新建文件（CLAUDE.md / docs/ 各文档）→ 修改文件 → 迁移文件。完整操作清单示例见 [references/init-report-template.md](references/init-report-template.md)。
 
-```
-## 待执行操作清单
-
-### 🔴 修复不一致（优先）
-- [ ] `README.md` — 修正启动命令 `npm start` → `npm run dev`
-- [ ] `README.md` — 补充遗漏的 5 个环境变量
-- [ ] `docs/api-reference.md` — 补充遗漏的 7 个 API 端点
-- [ ] `DEPLOY.md` — 更新部署方式 PM2 → Docker
-
-### 🟡 新建文件
-- [ ] `CLAUDE.md / AGENTS.md` — 从零创建，包含 11 个板块
-- [ ] `docs/index.md` — 文档索引入口
-- [ ] `docs/architecture.md` — 架构说明
-- [ ] `docs/getting-started.md` — 本地开发指南
-- [ ] `docs/api-reference.md` — API 参考
-- [ ] `docs/CHANGELOG.md` — 变更日志
-- [ ] `docs/faq-troubleshooting.md` — 常见问题与排错
-
-### 修改文件
-- [ ] `README.md` — 补充功能特性/许可证/文档索引
-
-### 迁移文件
-- [ ] `CONTRIBUTING.md` → `docs/contributing.md`
-
-请确认以上操作，或告诉我需要调整的地方。你可以：
-- 全部确认 → 我按清单执行
-- 部分确认 → 只执行你勾选的
-- 调整方案 → 告诉我哪里要改
-- 取消 → 不执行任何操作
-```
+清单末尾必须给出确认选项：
+- 全部确认 → 按清单执行；部分确认 → 只执行勾选的；调整方案 → 修改后重新确认；取消 → 不执行任何操作
 
 **只有收到用户明确确认后才进入 Step 3-init 执行。** 用户部分确认则只执行确认的部分；用户要求调整则修改方案后重新确认。
 
@@ -252,14 +154,14 @@ description: >
 
 | 文件 | 上限 | 超过怎么办 |
 |---|---|---|
-| `CLAUDE.md` / `AGENTS.md` | ~300 行 / ~15KB（软，看 adherence） | 先精简：扫顶部 blockquote / 历史叙事段 → 删 / 迁 docs；项目概览只留 1-3 行 + 速查表，不做"提醒下次会话"用。（该文件通常全量加载，不会被截断，但越长 adherence 越差） |
-| 记忆索引 `MEMORY.md` | **≤200 行 且 ≤25KB（硬）** | Claude Code 只加载 `MEMORY.md` 的前 200 行或前 25KB（先到先算），**超出部分在会话开始时静默不加载——等于没记**。务必压在 ~150 行 / ~18KB 留缓冲。压法不是硬删，是下面的「毕业」机制：详细机制提升进 docs、索引只留一行指针 |
-| 单条 memory 文件 | ~100 行（软） | 通常在塞多件事 / 写成事故复盘 → 拆 / 删；**若是稳定机制说明，提升进 docs 再把记忆缩成 reference 指针** |
+| `CLAUDE.md` / `AGENTS.md` | ~300 行 / ~15KB（软，看 adherence） | 先精简：扫顶部 blockquote / 历史叙事段 → 删 / 迁 docs；项目概览只留 1-3 行 + 速查表。（该文件通常全量加载，但越长 adherence 越差） |
+| 记忆索引 `MEMORY.md` | **≤200 行 且 ≤25KB（硬）** | Claude Code 只加载前 200 行或前 25KB（先到先算），**超出部分会话开始时静默不加载——等于没记**。压法不是硬删，是「毕业」机制：详细机制提升进 docs、索引只留一行指针 |
+| 单条 memory 文件 | ~100 行（软） | 通常在塞多件事 / 写成事故复盘 → 拆 / 删；稳定机制说明提升进 docs 再缩成 reference 指针 |
 | `docs/<single>.md` | ~1500 行（软） | 切分成多文件，加目录索引 |
 
-**额外做一次「体量倒挂」体检**：对比 `<memory 目录>` 与 `docs/` 的总体积（用 Glob 列出文件后逐个 Read 统计，或用 `ls -la` / Windows 的 `dir`，不要依赖 `du -sh`）。**健康态是 docs 厚、memory 薄**——docs 是沉淀的权威层，memory 是流动的「最近教训 + 指针」层。若 memory 反而比 docs 大，几乎一定是「本该毕业进 docs 的稳定知识还赖在松散记忆文件里」，按「毕业」机制往上泵，别只在 memory 内部挪。
+**额外做一次「体量倒挂」体检**：对比 `<memory 目录>` 与 `docs/` 的总体积（用 Glob 列出文件后逐个 Read 统计，或用 `ls -la` / Windows 的 `dir`）。**健康态是 docs 厚、memory 薄**。若 memory 反而比 docs 大，几乎一定是「本该毕业进 docs 的稳定知识还赖在松散记忆文件里」，按「毕业」机制往上泵。
 
-**超尺寸是这个 skill 的最高优先级，大于"补本次会话漏掉的同步"。** 原因：`MEMORY.md` 超 25KB 的部分根本不进上下文（静默丢失），超尺寸的 CLAUDE.md / AGENTS.md 让真正的规则被叙事段挤出 adherence——两种情况下，同步再补都徒劳。
+**超尺寸是这个 skill 的最高优先级，大于"补本次会话漏掉的同步"。** 原因：`MEMORY.md` 超限的部分根本不进上下文（静默丢失），超尺寸的 CLAUDE.md / AGENTS.md 让真正的规则被叙事段挤出 adherence——两种情况下，同步再补都徒劳。
 
 **执行顺序**：先精简（破除膨胀）→ 再做本次会话增量同步（补漏）。两件事不能合并——精简时心态是"什么不该在这"，补漏时心态是"什么该补到这"，混着做会两头不到位。
 
@@ -267,22 +169,19 @@ description: >
 
 **先做 ls，再做判断。**
 
-1. 列出 agent 的记忆文件（如有）：
-   - Claude Code：`ls ~/.claude/projects/<...>/memory/` 并读 `MEMORY.md` 及所有被引用的 `.md`
-   - Codex / OpenCode / 其他：找该 agent 的等价位置（见 references/agent-paths.md）
+1. 列出 agent 的记忆文件（如有）：Claude Code 在 `~/.claude/projects/<...>/memory/`；其他平台见 [references/agent-paths.md](references/agent-paths.md)。读 `MEMORY.md` 及所有被引用的 `.md`
 2. 对本次对话涉及的**每一个项目**：
-   - `ls <project-root>/` → 确认根目录结构
-   - `ls <project-root>/docs/ 2>/dev/null` → **枚举所有 docs**（缺失也要确认）
-   - 用 Glob 工具匹配 `<project-root>/**/*.md`（排除 `node_modules`、`.git`）→ 兜底抓散落的 .md。不要依赖 Unix `find` 命令。
+   - `ls <project-root>/` → 确认根目录结构；`ls <project-root>/docs/ 2>/dev/null` → **枚举所有 docs**（缺失也要确认）
+   - 用 Glob 工具匹配 `<project-root>/**/*.md`（排除 `node_modules`、`.git`）→ 兜底抓散落的 .md
    - 读 `README.md`、`CLAUDE.md` / `AGENTS.md`、每一个 `docs/*.md`
    - 读关键配置文件：`.env.example` / `.env.*`、`docker-compose.yml`、`Dockerfile`、`tsconfig.json`（存在哪些读哪些）
    - 读 CI/CD 配置：`.github/workflows/*.yml`、`.gitlab-ci.yml`、`Jenkinsfile`（存在哪些读哪些）
-   - 读项目元数据：`package.json`（description / scripts / engines / keywords）、`pyproject.toml`（description / requires-python）、`go.mod`（存在哪个读哪个）
+   - 读项目元数据：`package.json`、`pyproject.toml`、`go.mod`（存在哪个读哪个）
    - 读 `CHANGELOG.md`（如有）最近 20 行，掌握最近声称的变更
 3. 读全局 agent 配置（若有，如 `~/.claude/CLAUDE.md`、`~/.codex/AGENTS.md`）
 4. 回顾本次对话全部内容
 
-**输出一张文件清单**（内部用，不用给用户看），对每个文件标：「评估过 / 要改 / 不用改」。**漏一个不行**——这是这个 skill 最容易翻车的地方。
+**输出一张文件清单**（内部用），对每个文件标：「评估过 / 要改 / 不用改」。**漏一个不行**——这是这个 skill 最容易翻车的地方。
 
 ### 第二步：识别变更——用"变更影响矩阵"思考
 
@@ -300,9 +199,9 @@ description: >
 - 跨项目改动 → 上下游两边的 docs **都要对齐**（最常见的漏改场景）
 - 记忆层面：相对时间→绝对日期、过期事实→改、重复→合并、已完成待办→删
 
-完整映射表（覆盖更多变更类型与对应文档）见 **[references/sync-matrix.md](references/sync-matrix.md)**——遇到不确定的改动先查这张表。
+完整映射表见 **[references/sync-matrix.md](references/sync-matrix.md)**——遇到不确定的改动先查这张表。
 
-**关键检查**：这次对话是不是**跨项目**的？如果改了项目 A 且项目 B 依赖它（通过 SDK、API、子域、环境变量），**项目 B 的 docs 也要改**。这是历次同步最常翻的车。
+**关键检查**：这次对话是不是**跨项目**的？如果改了项目 A 且项目 B 依赖它，**项目 B 的 docs 也要改**。这是历次同步最常翻的车。
 
 ### 第三步：实际修改（用工具，不只是描述）
 
@@ -312,19 +211,22 @@ description: >
 
 **编辑原则**：
 
-- **减优于加**（最重要）：每次同步动作结束后，CLAUDE.md / AGENTS.md 净涨幅 > 30 行就是红灯——很可能在写历史叙事而不是补规则。回头审：这条加的是"下次 AI 写代码时必须看到"的规则，还是"上次会话告诉下次会话发生了什么"的便条？后者就是病。能删的先删，不能删的迁去 docs，最后剩下的才是规则。
+- **减优于加**（最重要）：每次同步动作结束后，CLAUDE.md / AGENTS.md 净涨幅 > 30 行就是红灯——很可能在写历史叙事而不是补规则。能删的先删，不能删的迁去 docs，最后剩下的才是规则
 - **合并优于追加**：新信息是对旧信息的更新，改旧条目；新加条目前先 grep 同关键字，看现有条目能不能并
-- **删除优于保留**：完成的临时计划、推翻的决策、已被新版本取代的项目记忆、单次事故的流水账复盘——删
-- **毕业优于内部挪腾**（针对 memory）：一条记忆稳定、复用、或本属「系统怎么工作」时，别在 memory 里搬来搬去——并进 docs / CLAUDE.md / AGENTS.md，原文件缩成一行指针或删（机制见前文「毕业」）
+- **删除优于保留，失效标记优于无痕删除**：完成的临时计划、流水账复盘——直接删；**被新版本取代的项目记忆/决策**——缩成一行 `- superseded: YYYY-MM-DD → 已并入 <去处>` 的失效指针（借鉴 Zep invalidate 思路，保留审计回溯），不物理删除
+- **毕业优于内部挪腾**：一条记忆稳定、复用、或本属「系统怎么工作」时，并进 docs / CLAUDE.md / AGENTS.md，原文件缩成失效指针或删（机制见 [references/concepts.md](references/concepts.md)）
+- **记忆带时间戳**：新建记忆文件在 frontmatter 写 `created: YYYY-MM-DD`；更新时写/改 `updated: YYYY-MM-DD`（借鉴 Claude Code `modified` 机制），供过期审查量化判断"这条记忆多老了"
 - **精确优于冗长**：一条记忆说清楚一件事，别塞三件
-- **绝对时间**：永远用绝对日期 `YYYY-MM-DD`（如 `2026-04-29`），不写"今天"、"最近"
+- **绝对时间**：永远用绝对日期 `YYYY-MM-DD`，不写"今天"、"最近"
 - **面向读者**：docs/ 的读者是"第一次接触这个项目的外部人"，写的时候想象对方只有 5 分钟能看完
 - **受众不混**：CLAUDE.md / AGENTS.md 里不抄 docs/ 的全文，docs/ 里不写"我记得上次……"——这是记忆的事
-- **指针不重复**：同一条事实如果 docs/ 里已详写，CLAUDE.md / AGENTS.md 只在「深入文档」指针表里出现一次，不在概览段再叙事一次
+- **指针不重复**：同一条事实如果 docs/ 里已详写，CLAUDE.md / AGENTS.md 只在「深入文档」指针表里出现一次
+
+**全局配置极度克制**：
 
 > 🔴 **CHECKPOINT · 🛑 STOP** — 全局配置（`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md` 等）是跨项目高影响面文件：用户没有在对话中**明确表达**该跨项目原则时，一律不写；拿不准就先问，不要替用户拍板。
 
-**全局配置极度克制**：`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md` 只有用户在对话中明确表达了**跨项目的核心原则**才动。日常项目细节绝不进全局。
+`~/.claude/CLAUDE.md` / `~/.codex/AGENTS.md` 只有用户在对话中明确表达了**跨项目的核心原则**才动。日常项目细节绝不进全局。
 
 **docs/ 编辑要点**——新增一个能力的文档变更通常要四处都补：
 1. **integration-guide / api-reference**：加**怎么用**（curl / SDK 示例 / 错误码表）
@@ -343,13 +245,13 @@ API 速查表、环境变量表、术语表是高频查询的结构化信息，*
 - [ ] 没新增 "X 起 Y 上线，详见 docs/Z.md" 这种 blockquote 历史叙事条目
 - [ ] 没在 CLAUDE.md / AGENTS.md 里抄 docs/ 已有的详细机制说明
 - [ ] 单条 memory 文件没超 ~100 行（超了拆 / 删 / 改成 reference）
-- [ ] **记忆索引 `MEMORY.md` ≤ 25KB 且 ≤ 200 行**（用 Read 工具读取后统计字节数和行数，或 Windows 用 `dir` 看文件大小；超出部分会话开始时静默不加载 = 等于没记）
-- [ ] **体量没倒挂**：memory 目录总体积不应大于 docs/ 总体积（用 Glob 列出文件后逐个 Read 统计，或 Windows 用 `dir /s`、macOS/Linux 用 `du -sk`，不要依赖单一平台命令）；倒挂了说明有该毕业进 docs 的知识赖在 memory，回去毕业
+- [ ] **记忆索引 `MEMORY.md` ≤ 25KB 且 ≤ 200 行**（超出部分会话开始时静默不加载 = 等于没记）
+- [ ] **体量没倒挂**：memory 目录总体积不应大于 docs/ 总体积
 
 **完整性 / 反漏改（再查这组）**：
 - [ ] 第一步列出的每个文件，都判断了"不用改"或"已改"
 - [ ] 记忆索引（若有）里的每个链接指向存在的文件
-- [ ] 每个记忆文件的 description 和内容对得上
+- [ ] 每个记忆文件的 description 和内容对得上；**带时间戳的记忆条目检查 `updated` 日期是否已刷新**
 - [ ] 记忆之间没有互相矛盾
 - [ ] CLAUDE.md / AGENTS.md 里提到的路径 / 命令 / 工具 / 环境变量在代码中真实存在
 - [ ] README 的安装 / 运行步骤跟代码一致
@@ -374,32 +276,25 @@ API 速查表、环境变量表、术语表是高频查询的结构化信息，*
 
 ### 第五步：变更摘要
 
-在所有文件修改完之后（不是之前），给用户简洁摘要：
+在所有文件修改完之后（不是之前），给用户简洁摘要（只列有实际变更的条目，没改的不写）：
 
 ```
 ## 同步完成
 
 ### 记忆变更
-- 更新：xxx（原因）
-- 新增：xxx
-- 删除：xxx（原因）
+- 更新：xxx（原因） / 新增：xxx / 删除或失效标记：xxx（原因）
 
 ### 文档变更（按项目分组，每个项目列全改动的文件）
 - <项目 A>/CLAUDE.md / AGENTS.md — xxx
 - <项目 A>/docs/integration-guide.md — xxx
-- <项目 A>/docs/architecture.md — xxx
 - <项目 B>/docs/<integration>.md — xxx
 
 ### 配置与 CI/CD 变更（如有）
 - <项目 A>/.env.example — xxx
-- <项目 A>/.github/workflows/ci.yml — xxx
-- <项目 A>/package.json — xxx
 
 ### 未处理
 - xxx（为什么没处理，比如需要用户确认）
 ```
-
-只列有实际变更的条目。没改的不写。
 
 ## 反例黑名单（常见翻车模式 → 替代做法）
 
@@ -409,7 +304,7 @@ API 速查表、环境变量表、术语表是高频查询的结构化信息，*
 | 2 | 记忆里写"今天 / 最近 / 上周" | 一律绝对日期 `YYYY-MM-DD`，过期即改 |
 | 3 | 只改文档不改代码事实核对（或反过来：把文档改成与 bug 一致） | 先提取代码事实清单再比对；代码是 bug 时改代码，文档保持描述预期行为 |
 | 4 | 自检时自创检查项、虚构问题然后自行修复 | 自检清单是封闭的；清单外真实问题标注 ⚠️ 列入「未处理」 |
-| 5 | memory 越堆越大、稳定知识赖在记忆文件里不毕业 | 第 3 次重复的教训、"系统怎么工作"的知识 → 并进 docs，记忆缩成一行指针 |
+| 5 | memory 越堆越大、稳定知识赖在记忆文件里不毕业 | 第 3 次重复的教训、"系统怎么工作"的知识 → 并进 docs，记忆缩成失效指针 |
 | 6 | 只改项目 A 不改依赖它的项目 B 的 docs | 跨项目改动两边都对齐，integration-guide / API 协议是重灾区 |
 | 7 | 凭记忆回报"已同步"，不实际核对文件 | 每次交付前列文件清单 + 逐项核对"已改 / 不用改"，漏一个不行 |
 
@@ -427,11 +322,11 @@ API 速查表、环境变量表、术语表是高频查询的结构化信息，*
 
 **跨项目改动**：每个项目都要跑一次完整的第一步（ls + 读 docs）。不要假设一个项目的 docs 改了，另一个就不用。尤其是上游-下游对接文档（integration-guide / SDK 说明 / API 协议），两边都要对齐。
 
-**Monorepo 场景**：Monorepo（含 `packages/`、`apps/`、`workspaces` 等子包结构）按以下规则处理：
+**Monorepo 场景**：按以下规则处理：
 - **Step 0-init 项目类型识别**：检测到 `workspaces` 字段（package.json）、`pnpm-workspace.yaml`、`lerna.json`、`turbo.json` 或顶层 `packages/` + 多 `package.json` → 判定为 Monorepo
-- **文档层级**：根级 CLAUDE.md / AGENTS.md 管全局约定（Monorepo 工具链、子包间通信方式、共享依赖管理策略），子包级 CLAUDE.md / AGENTS.md（如有）管包内约定。两级都要审查，职责不重叠
-- **一致性专项**：各子包 `package.json` 的共享依赖版本是否一致（同一依赖在不同子包里版本不同 → 标注 🔴）；根级 `package.json` 的 `workspaces` 声明与实际子包目录是否匹配；子包间的内部 API / 类型导出是否在文档中有说明
-- **CHANGELOG**：Monorepo 通常用根级 CHANGELOG + 子包级 CHANGELOG（或 Changesets）。审查时检查根级 CHANGELOG 是否覆盖了各子包的变更
+- **文档层级**：根级 CLAUDE.md / AGENTS.md 管全局约定（Monorepo 工具链、子包间通信方式、共享依赖管理策略），子包级（如有）管包内约定。两级都要审查，职责不重叠。冲突裁决遵循 AGENTS.md 规范：**离被编辑文件最近的文件优先**
+- **一致性专项**：各子包 `package.json` 的共享依赖版本是否一致（不一致 → 标注 🔴）；根级 `workspaces` 声明与实际子包目录是否匹配；子包间的内部 API / 类型导出是否在文档中有说明
+- **CHANGELOG**：Monorepo 通常用根级 CHANGELOG + 子包级（或 Changesets）。审查根级 CHANGELOG 是否覆盖各子包的变更
 - **同步时**：改了共享包（common / shared / core）→ 所有依赖它的子包的文档也要检查是否受影响
 
 **发现之前的同步漏了东西**：修掉。不要说"那不是这次对话的事"——你就是这个项目的持续编辑，过去的漏洞也归你管。
@@ -446,7 +341,10 @@ API 速查表、环境变量表、术语表是高频查询的结构化信息，*
 
 ## 参考资料
 
+- **[references/concepts.md](references/concepts.md)** — 核心概念详解（三类知识、毕业机制原理、规则手册 vs 变更日志——首次执行前必读）
 - **[references/doc-standards.md](references/doc-standards.md)** — 文档规范基线（CLAUDE.md / AGENTS.md / README.md / docs/ 各板块标准与质量红线）
 - **[references/sync-matrix.md](references/sync-matrix.md)** — 完整的"变更类型 → 要改哪些文件"映射表
 - **[references/agent-paths.md](references/agent-paths.md)** — Claude Code / Codex / OpenCode 各自的记忆与配置路径速查
-- **[references/init-report-template.md](references/init-report-template.md)** — 初始化审查报告模板（Step 1-init 输出格式）
+- **[references/init-report-template.md](references/init-report-template.md)** — 初始化审查报告模板 + 一致性检查项清单（Step 1-init 比对基准）
+- **scripts/docs_lint.py** — 确定性文档 lint（相对链接 / 相对时间词 / TODO / 标题层级），辅助第四步自检
+- **scripts/regression_check.py** — 结构回归检查（SKILL.md 流程锚点 + test-prompts.json 完整性），改动本技能后运行

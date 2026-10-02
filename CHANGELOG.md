@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-02
+
+### Changed
+- **SKILL.md 瘦身重构**（452 → 350 行，−22%）：概念解释段（为什么重要 / 三类知识三种受众 / CLAUDE.md vs README / 毕业机制原理 / 规则手册 vs 变更日志）整体迁出到新文件 `references/concepts.md`，SKILL.md 以 6 行「核心概念速览」表替代并留指针；Step 1-init 的 15 项一致性检查表与 Step 2-init 操作清单示例迁出到 `references/init-report-template.md`。依据：Gloaguen et al. (2026) 实证——上下文文件越长 agent adherence 越差（对标 AGENTS.md 规范"章节超 30 行迁 docs"反模式）
+
+### Added
+- `references/concepts.md` — 核心概念详解（首次执行前必读）
+- `scripts/docs_lint.py` — 确定性文档 lint：相对链接有效性（剥离代码块与 #fragment）、相对时间词扫描、TODO 占位符、标题层级跳跃、MEMORY.md 尺寸红线（≤200 行 / ≤25KB）
+- `scripts/regression_check.py` — 结构回归检查：SKILL.md 流程锚点完整性（30 个锚点 + 哨兵项）、CHECKPOINT 数量下限、frontmatter 必填字段、references 引用链（双向：缺失 + 闲文件）、test-prompts.json schema、集成调用 docs_lint
+- **记忆失效标记**（借鉴 Zep 双时间戳思路）：被新版本取代的项目记忆/决策缩成一行 `- superseded: YYYY-MM-DD → 已并入 <去处>` 失效指针，默认不物理删除，保留审计回溯
+- **记忆时间戳**（借鉴 Claude Code `modified` frontmatter）：记忆文件 frontmatter 写 `created` / `updated: YYYY-MM-DD`，供过期审查量化判断
+- Monorepo 冲突裁决规则补充：离被编辑文件最近的 CLAUDE.md / AGENTS.md 优先（对标 AGENTS.md 规范）
+- 自检清单新增：带时间戳的记忆条目检查 `updated` 日期是否已刷新
+
+### 背景与依据
+- 本次重构基于业界方案对标调研（AGENTS.md 标准 / Claude Code Auto Memory / Mem0·Zep·Letta 记忆框架 / Continuous Documentation 自动化），完整调研结论见仓库外的 `neat-freak-optimization-research.md`
+- 验证：regression_check 全部通过（30 锚点 + CHECKPOINT×3 + 引用链 5/5）；docs_lint 0 错误；鲁班 SkillOps 扫描 0 断裂 / 0 frontmatter 问题
+
 ## [0.5.2] - 2026-10-02
 
 ### Added

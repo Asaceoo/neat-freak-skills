@@ -2,6 +2,50 @@
 
 初始化流程 Step 1-init 输出的审查报告按此格式。报告分两部分：一致性问题（核心）+ 各文件板块审查。
 
+## 一致性检查项清单（Step 1-init 比对基准）
+
+维度一一致性检查的 15 项检查项、比对方法与不一致示例：
+
+| 检查项 | 比对方法 | 不一致示例 |
+|--------|----------|------------|
+| 命令准确性 | 文档中的命令 vs 代码中实际可用的命令 | 文档写 `npm start`，代码中只有 `npm run dev` |
+| 环境变量完整性 | 文档中列出的环境变量 vs 代码中实际使用的 | 文档列出 3 个，代码中实际用了 8 个 |
+| 环境变量准确性 | 文档中的变量名/默认值 vs 代码中的 | 文档写 `DB_HOST`，代码中是 `DATABASE_HOST` |
+| API 端点一致性 | 文档中的 API 列表 vs 代码中注册的路由 | 文档列出 5 个端点，代码中有 12 个 |
+| 技术栈准确性 | 文档中的技术栈 vs 代码依赖文件 | 文档写 Express 3，package.json 是 Express 4 |
+| 目录结构一致性 | 文档中的目录说明 vs 实际目录 | 文档说"源码在 src/"，实际在 lib/ |
+| 配置准确性 | 文档中的配置项 vs 代码中的配置定义 | 文档说端口 3000，代码默认 8080 |
+| 路径有效性 | 文档中引用的文件路径 vs 实际文件 | 文档指向 `docs/api.md`，文件不存在 |
+| 依赖版本 | 文档中的版本要求 vs 实际依赖版本 | 文档要求 Node 16，package.json 写 Node 20 |
+| 配置文件一致性 | 配置文件实际内容 vs 文档描述 | `.env.example` 有 15 个变量，文档只提了 8 个；文档说"Redis 用于缓存"但 `docker-compose.yml` 没有 Redis 服务 |
+| CI/CD 与文档对齐 | CI/CD 配置中的命令/目标 vs 文档描述 | 文档写 `npm test`，CI 中跑的是 `npm run test:ci`；文档说"main 自动部署"但 CI 配置部署目标是 staging |
+| 项目元数据一致性 | `package.json` / `pyproject.toml` 元数据 vs README 描述 | README 说"支持 Node 18+"但 `engines` 字段写 `>=16`；`description` 与 README 简介不一致 |
+| CHANGELOG 与代码一致性 | CHANGELOG 中的功能声明 vs 代码实际实现 | CHANGELOG 声称"新增 X 功能"但代码中没有实现；声称"修复了 Y bug"但修复代码未合并 |
+| 代码逻辑与设计文档一致性 | 代码实际行为 vs `docs/architecture.md` 描述 | 数据流方向与架构图不符；模块调用关系违反设计文档描述的分层原则；状态机流转与设计文档状态图不匹配 |
+| 文档内链接有效性 | 文档中所有相对链接 / 锚点 vs 实际文件路径 | 示例（反引号内）：`[详见架构](./architecture.md)` 目标文件不存在；文件重命名后旧链接未更新；锚点 `#section` 不存在 |
+
+## 操作清单示例（Step 2-init 输出格式）
+
+```
+## 待执行操作清单
+
+### 🔴 修复不一致（优先）
+- [ ] `README.md` — 修正启动命令 `npm start` → `npm run dev`
+- [ ] `README.md` — 补充遗漏的 5 个环境变量
+- [ ] `docs/api-reference.md` — 补充遗漏的 7 个 API 端点
+
+### 🟡 新建文件
+- [ ] `CLAUDE.md / AGENTS.md` — 从零创建，包含 11 个板块
+- [ ] `docs/index.md` — 文档索引入口
+- [ ] `docs/architecture.md` — 架构说明
+
+### 修改文件 / 迁移文件
+- [ ] `README.md` — 补充许可证/文档索引
+- [ ] `CONTRIBUTING.md` → `docs/contributing.md`
+
+请确认以上操作，或告诉我需要调整的地方。（全部确认 / 部分确认 / 调整方案 / 取消）
+```
+
 ## 完整示例
 
 ```
