@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-10-02
+
+### Changed
+- **用户手册**（docs/user-guide.md）更新至 v0.6.0 现状：安装说明补 `scripts/` 目录；安全边界重写为「3 处 CHECKPOINT 硬停点 + superseded 失效标记」；新增 concepts.md FAQ；§8 重写为「自带工具与验证」（docs_lint.py / regression_check.py 用法表）
+- **技术手册**（docs/technical-manual.md）更新至 v0.6.0 现状：文件结构树补 `concepts.md` 与 `scripts/`；新增 §4「硬停点（CHECKPOINT）编码」与 §7「确定性工具链」两章；§5.3 记忆写入规则表补失效标记（Zep 思路）/ 时间戳（Claude Code 思路）/ Monorepo 最近优先裁决；版本演进主线补 0.5.1 → 0.5.2 → 0.6.0；扩展指南第 1 条改为「改完先跑 regression_check.py」强制闭环
+
 ## [0.6.0] - 2026-10-02
 
 ### Changed
