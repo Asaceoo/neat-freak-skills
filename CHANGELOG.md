@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-10-02
+
+### Added
+- SKILL.md 新增独立章节「反例黑名单（常见翻车模式 → 替代做法）」：7 条反模式与替代做法的速查表（CLAUDE.md 当变更日志 / 记忆写相对时间 / 文档向 bug 对齐 / 自检自创项 / 记忆不毕业 / 跨项目漏改 / 凭记忆回报）。背景：鲁班 dim9「反例与黑名单」维度要求独立章节 + 反模式→替代做法结构，原反例散落各处无独立章节（dim9 8.0 分的失分点）
+
 ## [0.5.1] - 2026-10-02
 
 ### Added
