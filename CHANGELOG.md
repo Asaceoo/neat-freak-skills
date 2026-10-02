@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-02
+
+### Added
+- SKILL.md 新增 3 处 `🔴 CHECKPOINT · 🛑 STOP` 硬停标记，将已有的用户确认点编码为醒目的标记语法（此前只有语义描述、无标记编码，Agent 执行时可能凭语义猜测而非硬停）：
+  1. **Step 2-init 用户确认** — 审查报告 + 操作清单获用户明确确认前，禁止执行任何文件修改
+  2. **全局配置写入闸门** — 用户未明确表达跨项目原则时，`~/.claude/CLAUDE.md` 等全局配置一律不写
+  3. **记忆矛盾暂停** — 无法自动判断的记忆矛盾硬停，列入「未处理」交用户裁决
+- 背景：鲁班（Luban）Quick 模式评估 dim4「检查点设计」维度得分 0.0（全文 0 处 CHECKPOINT/STOP/🔴/🛑 标记），修复后预期总分 89.3 → ~95.3
+
 ## [0.5.0] - 2026-10-02
 
 ### Added
