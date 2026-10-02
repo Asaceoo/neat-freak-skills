@@ -1,0 +1,85 @@
+{
+  "skill": "neat-freak",
+  "version": "0.4.0",
+  "prompts": [
+    {
+      "id": "init-new-project",
+      "prompt": "初始化下项目",
+      "context": "项目无 CLAUDE.md、无 docs/、有 README.md、有 package.json 和 src/ 目录",
+      "expected_behavior": "走初始化流程：Step 0-init 提取代码事实（项目类型/技术栈/目录结构/命令/环境变量/API/数据模型），Step 1-init 输出审查报告（标注不一致/缺失项），Step 2-init 输出操作清单等用户确认。不擅自创建文件。",
+      "verification_points": [
+        "是否走了初始化分支而非常规同步",
+        "语义匹配是否命中（'初始化下项目'不是精确触发词）",
+        "审查报告是否基于代码事实而非凭空判断",
+        "是否在 Step 2-init 停下等用户确认"
+      ],
+      "expected_output": {
+        "stage": "Step 1-init 审查报告 + Step 2-init 操作清单",
+        "must_contain": [
+          "项目概况（项目类型/技术栈/代码事实提取数量）",
+          "一致性问题表（含文件/问题类型/文档描述/代码事实/严重度）",
+          "操作清单（按 🔴 修复不一致 / 🟡 新建文件 / 修改文件 / 迁移文件 分组）",
+          "等待用户确认的提示语"
+        ],
+        "must_not_contain": [
+          "未经确认就创建或修改文件",
+          "凭空判断（无代码事实支撑的结论）"
+        ],
+        "example_fragment": "## 初始化审查报告\n\n### 项目概况\n- 项目类型：Web 服务\n- 技术栈：Node.js 20 + Express 4\n- 代码事实提取：12 个 API 端点、8 个环境变量\n\n### 一致性问题（核心）\n| # | 文件 | 问题类型 | 文档描述 | 代码事实 | 严重度 |\n|---|------|----------|----------|----------|--------|\n| 1 | README.md | 命令过时 | `npm start` | 实际命令是 `npm run dev` | 🔴 高 |\n\n### 待执行操作清单\n### 🔴 修复不一致（优先）\n- [ ] README.md — 修正启动命令\n\n请确认以上操作，或告诉我需要调整的地方。"
+      }
+    },
+    {
+      "id": "sync-after-feature",
+      "prompt": "同步一下",
+      "context": "本次会话新增了 2 个 API 端点（GET /api/users、POST /api/users）和 1 个环境变量（JWT_SECRET）",
+      "expected_behavior": "走常规同步：第零步体检（检查 CLAUDE.md/MEMORY.md 尺寸），第一步盘点文件，第二步识别变更影响（API→api-reference+architecture，环境变量→CLAUDE.md+getting-started），第三步实际修改文件，第四步自检清单，第五步输出变更摘要。",
+      "verification_points": [
+        "是否走了常规同步分支",
+        "是否识别出 API 变更影响 api-reference 和 architecture",
+        "是否识别出环境变量变更影响 CLAUDE.md 和 getting-started",
+        "是否实际用 Edit/Write 修改文件而非只描述",
+        "是否执行了自检清单",
+        "变更摘要是否按项目分组列出所有改动文件"
+      ],
+      "expected_output": {
+        "stage": "第五步 变更摘要",
+        "must_contain": [
+          "文档变更（按项目分组，列出所有改动文件）",
+          "API 变更同时出现在 api-reference 和 architecture",
+          "环境变量变更同时出现在 CLAUDE.md 和 getting-started",
+          "自检清单结果（含 CLAUDE.md 净涨幅 ≤ 30 行）"
+        ],
+        "must_not_contain": [
+          "只描述不修改（'我会怎么改'不算完成）",
+          "API 只改了 api-reference 没改 architecture（漏改）",
+          "环境变量只改了一处（漏改）"
+        ],
+        "example_fragment": "## 同步完成\n\n### 文档变更（按项目分组）\n- my-project/CLAUDE.md — 新增 JWT_SECRET 到环境变量表\n- my-project/docs/api-reference.md — 新增 GET /api/users、POST /api/users 接口说明\n- my-project/docs/architecture.md — Routes 小节新增 2 个端点\n- my-project/docs/getting-started.md — 本地环境变量配置补充 JWT_SECRET\n\n### 自检清单\n✅ CLAUDE.md 净涨幅 ≤ 30 行（实际 +3 行）\n✅ 新增 API 路由在 api-reference 和 architecture 都出现了\n✅ 新增环境变量在 getting-started 和 CLAUDE.md 都出现了"
+      }
+    },
+    {
+      "id": "colloquial-trigger",
+      "prompt": "搞一下文档",
+      "context": "项目有 CLAUDE.md 和 docs/，但文档内容与代码有出入",
+      "expected_behavior": "语义匹配触发——'搞一下文档'的意图是'整理文档使其与代码一致'。根据项目当前状态判断走初始化还是常规同步：如果已有 neat-freak 初始化标记 → 常规同步；如果无标记但文档已存在 → 按用户意图判断（'搞一下'偏向同步而非从零建）。",
+      "verification_points": [
+        "是否通过语义匹配触发（不是精确匹配'搞一下文档'）",
+        "是否正确判断走初始化还是常规同步",
+        "是否没有因为缺少精确触发词而漏触发"
+      ],
+      "expected_output": {
+        "stage": "触发判断 + 进入对应流程",
+        "must_contain": [
+          "识别出'搞一下文档'的意图是文档同步",
+          "根据项目状态（有无 neat-freak 初始化标记）判断走初始化还是常规同步",
+          "进入对应流程后执行该流程的标准步骤"
+        ],
+        "must_not_contain": [
+          "因缺少精确触发词而拒绝执行",
+          "要求用户用精确触发词重新输入"
+        ],
+        "example_fragment": "识别意图：'搞一下文档' → 文档同步\n判断流程：检测到 neat-freak 初始化标记 → 走常规同步\n\n[进入常规同步流程：第零步体检 → 第一步盘点 → ...]"
+      }
+    }
+  ]
+}
